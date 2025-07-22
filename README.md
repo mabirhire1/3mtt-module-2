@@ -25,7 +25,7 @@ This script will:
 
 7. Offer a cleanup option to remove all created resources.
 
-**`[Deployment Script](deploy.sh)`**
+**`[Deployment Script](https://github.com/mabirhire1/3mtt-module-2/blob/ec2-deployment-with-shell-script/deploy.sh)`**
 
 **Steps to Implement and Use the Script:**
 
