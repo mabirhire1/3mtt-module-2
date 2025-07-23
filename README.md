@@ -139,3 +139,10 @@ Step 7: Pictorial outputs
 ## Summary
 
 In this project, we automated the provisioning of AWS resources—**EC2 instances and S3 buckets**—using **Bash functions and arrays**. A function was created to launch an Amazon Linux EC2 instance using the AWS CLI with `--instance-type`, `--key-name`, and `--security-group-ids` parameters, capturing the instance ID for reference. Another function used an **array of department names** (`marketing`, `sales`, `hr`, `operations`, `media`) to dynamically create S3 buckets for each department. To avoid naming conflicts, we appended a Unix timestamp to each bucket name. We ensured S3 bucket creation succeeded by using the correct `--create-bucket-configuration` based on region (only needed for non-`us-east-1`), enabled versioning, and applied public access restrictions. Throughout the process, we debugged common issues like malformed security group IDs, region mismatches, and unsupported CLI options, while learning how to organize reusable logic with functions and arrays in Bash scripting.
+
+
+**More Interactions**
+show issues resolutions for 
+1. malformed security group IDs,
+2. region mismatches, and unsupported CLI options
+3. Missing explixit environment verification steps for `local`, `testing` and `production`.
