@@ -26,7 +26,7 @@ VIDEO LINK FOR AWS KEY PAIR CREATION
 
 Step 1: Create Your Shell Script File
 
-Create a new file:![alt text](image.png)
+Create a new file:
 
 `touch aws_resources.sh`
 `chmod +x aws_resources.sh`
@@ -36,7 +36,6 @@ Create a new file:![alt text](image.png)
 Edit it using nano or vim text Editors.ls
 
 `nano aws_resources.sh`
-
 
 Step 2: Add the Shebang and Setup
 At the top of the file:
@@ -48,15 +47,17 @@ This function provisions one EC2 instance:
 
 ![EC2 Script](img/image1a.png)
  
- Replace your-key-name-here with your actual EC2 key pair name.
+Replace your-key-name-here with your actual EC2 key pair name.
+
+Watch the video below on steps to create a new key pair in AWS
+
+![Key pair creation](https://www.youtube.com/watch?v=wfRW--_Vhg4)
 
 **Note**
 
 $?: is a special variable that holds the exit status of the last executed command. In this case, it checks if the aws ec2 run-instances command was successful. Exit status that equals 0 is interpreted as successful. Therefore, if exit code is “0”, then echo the message to confirm that the previous command was successful.
 
 notice also the use of environment variables to hold the value of ami_id, count, and region and replaced them with their respective values.
-
-
 
 Step 4: Function to Create S3 Buckets Using an Array
 
@@ -121,7 +122,7 @@ At the bottom of your script:
 
 Step 6: Final Script Structure (aws_resources.sh)
 
-[Final script structure]()
+[Final script structure](https://github.com/mabirhire1/3mtt-module-2/blob/funct-arrays-in-shell-script/aws_resources.sh)
 
 # Save and run the final script with the command below
 
