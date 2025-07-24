@@ -1,0 +1,346 @@
+# WordPress Site on AWS - Capstone Project
+
+## Project Overview
+
+This capstone project demonstrates the deployment of a scalable, secure, and high-performance WordPress website on Amazon Web Services (AWS) for DigitalBoost, a digital marketing agency. The solution leverages multiple AWS services to create a robust infrastructure that can handle increasing traffic while maintaining security and cost-effectiveness.
+
+## Architecture Components
+
+The project implements a multi-tier architecture with the following key components:
+- Virtual Private Cloud (VPC) with public and private subnets
+- Application Load Balancer for traffic distribution
+- Auto Scaling Group for dynamic instance management
+- Amazon RDS MySQL database for data storage
+- Amazon EFS for shared file storage
+- NAT Gateway for secure internet access from private subnets
+
+## Prerequisites
+
+Before starting this project, ensure you have:
+- Knowledge of TCP/IP Operations Essentials
+- Completion of Core 2 Courses and Mini Projects
+- AWS Account with appropriate permissions
+- Basic understanding of WordPress architecture
+- Familiarity with AWS Management Console
+
+## Project Implementation Steps
+
+### 1. VPC Setup
+
+**Objective:** Create a Virtual Private Cloud (VPC) to isolate and secure the WordPress infrastructure.
+
+**Implementation Steps:**
+
+1. **Create VPC**
+   ```bash
+   # Define IP address range (e.g., 10.0.0.0/16)
+   aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=WordPress-VPC}]'
+   ```
+
+2. **Create Subnets**
+   - Public Subnet 1: 10.0.1.0/24 (Availability Zone A)
+   - Public Subnet 2: 10.0.2.0/24 (Availability Zone B)
+   - Private Subnet 1: 10.0.3.0/24 (Availability Zone A)
+   - Private Subnet 2: 10.0.4.0/24 (Availability Zone B)
+
+3. **Configure Route Tables**
+   - Create and associate route tables for public subnets
+   - Create and associate route tables for private subnets
+   - Configure routing rules for internet access
+
+**Security Considerations:**
+- Use private subnets for database and application servers
+- Implement least privilege access principles
+- Enable VPC Flow Logs for network monitoring
+
+### 2. Public and Private Subnet with NAT Gateway
+
+**Objective:** Implement a secure network architecture with public and private subnets using NAT Gateway for private subnet internet access.
+
+**Implementation Steps:**
+
+1. **Set up Public Subnets**
+   - Configure public subnets for resources accessible from the internet
+   - Associate with Internet Gateway
+   - Place Load Balancer and NAT Gateway in public subnets
+
+2. **Create Private Subnets**
+   - Configure private subnets for application servers and databases
+   - No direct internet access for enhanced security
+   - Host WordPress instances and RDS database
+
+3. **Configure NAT Gateway**
+   ```bash
+   # Create NAT Gateway in public subnet
+   aws ec2 create-nat-gateway --subnet-id subnet-12345678 --allocation-id eipalloc-12345678
+   ```
+   - Enable internet access for private subnet resources
+   - Configure route tables to route traffic through NAT Gateway
+   - Implement redundancy with NAT Gateways in multiple AZs
+
+**Network Security:**
+- Configure Network ACLs for additional security layer
+- Implement security groups with specific port access
+- Monitor network traffic for anomalies
+
+### 3. AWS MySQL RDS Setup
+
+**Objective:** Deploy a managed MySQL database using Amazon RDS for WordPress data storage.
+
+**Implementation Steps:**
+
+1. **Create RDS Instance**
+   ```bash
+   aws rds create-db-instance \
+     --db-instance-identifier wordpress-database \
+     --db-instance-class db.t3.micro \
+     --engine mysql \
+     --engine-version 8.0.35 \
+     --allocated-storage 20 \
+     --db-name wordpressdb \
+     --master-username admin \
+     --master-user-password SecurePassword123!
+   ```
+
+2. **Configure Security Groups**
+   - Create RDS security group allowing MySQL traffic (port 3306)
+   - Restrict access to WordPress application servers only
+   - No direct internet access to database
+
+3. **Database Configuration**
+   - Enable automated backups
+   - Configure Multi-AZ deployment for high availability
+   - Set up read replicas if needed for performance
+   - Enable encryption at rest
+
+4. **Connect WordPress to RDS**
+   - Update wp-config.php with RDS endpoint
+   - Configure database connection parameters
+   - Test connectivity and performance
+
+**Database Security Measures:**
+- Enable encryption in transit and at rest
+- Regular security patches through managed service
+- Database activity monitoring
+- Backup and recovery procedures
+
+### 4. EFS Setup for WordPress Files
+
+**Objective:** Utilize Amazon Elastic File System (EFS) to store WordPress files for scalable and shared access.
+
+**Implementation Steps:**
+
+1. **Create EFS File System**
+   ```bash
+   aws efs create-file-system \
+     --creation-token wordpress-efs-$(date +%s) \
+     --performance-mode generalPurpose \
+     --throughput-mode provisioned \
+     --provisioned-throughput-in-mibps 100
+   ```
+
+2. **Configure Mount Targets**
+   - Create mount targets in each availability zone
+   - Associate with appropriate security groups
+   - Enable NFS traffic (port 2049)
+
+3. **Mount EFS on WordPress Instances**
+   ```bash
+   # Install EFS utilities
+   sudo yum install -y amazon-efs-utils
+   
+   # Create mount point
+   sudo mkdir -p /var/www/html
+   
+   # Mount EFS
+   sudo mount -t efs fs-12345678:/ /var/www/html
+   ```
+
+4. **Configure WordPress**
+   - Move WordPress files to EFS
+   - Update file permissions
+   - Configure automatic mounting on boot
+
+**EFS Benefits:**
+- Shared storage across multiple instances
+- Automatic scaling and high availability
+- Integration with Auto Scaling Groups
+- Consistent performance
+
+### 5. Application Load Balancer
+
+**Objective:** Set up Application Load Balancer to distribute incoming traffic among multiple instances for high availability and fault tolerance.
+
+**Implementation Steps:**
+
+1. **Create Application Load Balancer**
+   ```bash
+   aws elbv2 create-load-balancer \
+     --name wordpress-alb \
+     --subnets subnet-12345678 subnet-87654321 \
+     --security-groups sg-12345678 \
+     --scheme internet-facing \
+     --type application
+   ```
+
+2. **Configure Target Groups**
+   - Create target group for WordPress instances
+   - Configure health checks on HTTP/80 and /wp-admin/
+   - Set appropriate thresholds for healthy/unhealthy targets
+
+3. **Set up Listener Rules**
+   - Configure HTTP listener on port 80
+   - Configure HTTPS listener on port 443 (with SSL certificate)
+   - Set up routing rules based on request patterns
+
+4. **SSL/TLS Configuration**
+   - Obtain SSL certificate from AWS Certificate Manager
+   - Configure HTTPS termination at load balancer
+   - Implement HTTP to HTTPS redirect
+
+**Load Balancer Features:**
+- Health checks for automatic failover
+- SSL termination for improved performance
+- Content-based routing capabilities
+- Integration with Auto Scaling
+
+### 6. Auto Scaling Group
+
+**Objective:** Implement Auto Scaling to automatically adjust the number of instances based on traffic load.
+
+**Implementation Steps:**
+
+1. **Create Launch Template**
+   ```bash
+   aws ec2 create-launch-template \
+     --launch-template-name wordpress-launch-template \
+     --launch-template-data '{
+       "ImageId": "ami-12345678",
+       "InstanceType": "t3.micro",
+       "SecurityGroupIds": ["sg-12345678"],
+       "UserData": "base64-encoded-user-data"
+     }'
+   ```
+
+2. **Configure Auto Scaling Group**
+   ```bash
+   aws autoscaling create-auto-scaling-group \
+     --auto-scaling-group-name wordpress-asg \
+     --launch-template LaunchTemplateName=wordpress-launch-template,Version=1 \
+     --min-size 2 \
+     --max-size 6 \
+     --desired-capacity 2 \
+     --vpc-zone-identifier "subnet-12345678,subnet-87654321" \
+     --target-group-arns arn:aws:elasticloadbalancing:region:account:targetgroup/wordpress-tg/1234567890123456
+   ```
+
+3. **Define Scaling Policies**
+   - Scale-out policy: Add instances when CPU > 70%
+   - Scale-in policy: Remove instances when CPU < 30%
+   - Configure CloudWatch alarms for triggers
+
+4. **Launch Configuration**
+   - Install WordPress and dependencies
+   - Configure EFS mounting
+   - Set up database connection
+   - Configure web server (Apache/Nginx)
+
+**Auto Scaling Benefits:**
+- Cost optimization through dynamic scaling
+- High availability and fault tolerance
+- Automatic recovery from instance failures
+- Performance optimization based on demand
+
+## Security Implementation
+
+### Security Groups Configuration
+
+1. **Web Tier Security Group**
+   - Inbound: HTTP (80), HTTPS (443) from Internet
+   - Outbound: All traffic to private subnets
+
+2. **Application Tier Security Group**
+   - Inbound: HTTP (80) from Load Balancer security group
+   - Outbound: MySQL (3306) to database, NFS (2049) to EFS
+
+3. **Database Tier Security Group**
+   - Inbound: MySQL (3306) from application tier only
+   - Outbound: None
+
+4. **EFS Security Group**
+   - Inbound: NFS (2049) from application tier
+   - Outbound: None
+
+### Additional Security Measures
+
+- **IAM Roles and Policies**: Least privilege access for EC2 instances
+- **VPC Flow Logs**: Network traffic monitoring
+- **CloudTrail**: API activity logging
+- **AWS Config**: Configuration compliance monitoring
+- **Encryption**: EFS and RDS encryption enabled
+- **Regular Updates**: Automated patching for WordPress and OS
+
+## Monitoring and Maintenance
+
+### CloudWatch Monitoring
+- EC2 instance metrics (CPU, memory, disk)
+- RDS performance metrics
+- Load Balancer metrics
+- Custom WordPress metrics
+
+### Backup Strategy
+- RDS automated backups with point-in-time recovery
+- EFS automatic backups
+- Regular WordPress content snapshots
+
+### Maintenance Tasks
+- Regular WordPress core and plugin updates
+- Security patch management
+- Performance optimization
+- Cost optimization reviews
+
+## Testing and Validation
+
+### Load Testing
+1. Use tools like Apache Bench or JMeter
+2. Simulate traffic spikes to test auto-scaling
+3. Monitor response times and error rates
+4. Validate failover scenarios
+
+### Security Testing
+1. Penetration testing
+2. Vulnerability assessments
+3. Security group validation
+4. Access control verification
+
+## Troubleshooting Guide
+
+### Common Issues
+1. **Database Connection Failures**
+   - Check security group rules
+   - Verify RDS endpoint configuration
+   - Test network connectivity
+
+2. **EFS Mount Issues**
+   - Verify security group NFS rules
+   - Check mount target configuration
+   - Validate file permissions
+
+3. **Load Balancer Health Checks**
+   - Review target group health check settings
+   - Verify WordPress application health
+   - Check instance security groups
+
+## Cost Optimization
+
+### Strategies
+- Use reserved instances for predictable workloads
+- Implement CloudWatch cost monitoring
+- Regular resource utilization reviews
+- Optimize storage classes for EFS and RDS
+
+## Conclusion
+
+This WordPress on AWS implementation provides a scalable, secure, and highly available solution for DigitalBoost's requirements. The architecture leverages AWS best practices and managed services to ensure optimal performance, security, and cost-effectiveness.
+
+The solution can handle traffic spikes through auto-scaling, maintains high availability through multi-AZ deployment, and provides robust security through layered defense mechanisms. Regular monitoring and maintenance ensure continued optimal performance and security posture.
