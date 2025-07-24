@@ -1,0 +1,7 @@
+Weaknesses:
+
+Lacks Task 3 requirement to integrate AWS CLI for EC2 instance provisioning.
+No demonstration of output success or failure messages for actual AWS resource creation.
+
+
+FOR FUTURE IMPROVEMENT/ACTUAL DEMONSTRATION
